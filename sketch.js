@@ -6,9 +6,10 @@ var ground, backgroundImg,invisibleGround
 var enemy,enemyAttack,enemyRun,enemyImg
 var girl,girlImg ,girlRunning, girlColliding
 var score
+var obstacle
 var gameOver,gameOverImg, restart, restartImg
-var obstacle1
-var obstaclesGroup
+var obstaclesGroup, obstacle1
+
 
 function preload(){
   backgroundImg= loadImage("Background.png");
@@ -21,15 +22,14 @@ function preload(){
   gameOverImg=loadImage("game over.png");
   girlColliding=loadImage("girl collided.png");
   obstacle1=loadImage("obstacle 1.png");
-
 }
 function setup() {
   createCanvas(600,500);
-
+  obstacle= createSprite(660,450,10,40)
   ground=createSprite(0,0,0,0)
   ground.addImage("backgroundImg",backgroundImg)  
   ground.scale=1.4
-  ground=velocityX=-1
+  ground.velocityX=-1
 
   girl=createSprite(520,410,20,10)
   girl.addImage("girlImg",girlImg)
@@ -52,8 +52,8 @@ function setup() {
   restart=createSprite(350,115)
   restart.addImage(restartImg)
 
-
   obstaclesGroup = new Group();
+
   score=0
 
 }
@@ -67,31 +67,67 @@ function draw()
   enemy.velocityY=girl.velocityY+0.8
   enemy.collide(invisibleGround)
 
- 
 
   if(gameState===PLAY){
+    spawnObstacles();
+
     gameOver.visible=false
     restart.visible=false
     score = score + Math.round(getFrameRate() / 60);
-    spawnObstacles();
-
-
 
     if (obstaclesGroup.isTouching(enemy)) {
       enemy.velocityY = -12;
     }
     ground.velocityX = -(4 + 3 * score / 100);
 
-
+    if (ground.x < 0) {
+      ground.x = ground.width / 2;
+    }
+    if ((keyDown("space") && girl.y >= 220)) {
+      girl.velocityY = -12;
   }
-  
+  if (girl.isTouching(obstaclesGroup)) {
+    gameState = END;
+  }  
+
+  else if (gameState === END) {
+    gameOver.visible = true;
+    restart.visible = true;
+    ground.velocityX = 0;
+    girl.velocityY = 0
+    girl.changeImage("girlImage", girlImage);
+    enemy.changeAnimation("enemyAttack", enemyAttack);
+    enemy.x = girl.x;
+    if (enemy.isTouching(girl)) {
+      girl.changeImage("girl_collided", girl_collided);
+      enemy.changeImage("enemyImg", enemyImg);
+    }
+    //set lifetime of the game objects so that they are never destroyed
+    obstaclesGroup.setLifetimeEach(-1);
+    obstaclesGroup.setVelocityXEach(0);
+
+    if (mousePressedOver(restart)) {
+      reset();
+    }
 
   background("black");
   drawSprites()
 }
+  }
+}
+function reset() {
+  gameState = PLAY;
+  gameOver.visible = false;
+  restart.visible = false;
+  girl.changeAnimation("girl_running", girl_running);
+  obstaclesGroup.destroyEach();
+  score = 0;
+  enemy.x = 50;
+}
+
 function spawnObstacles(){
   if(frameCount %60===0){
-    var obstacle= createSprite(660,450,10,40)
+   
     obstacle.velocityX=-6
     obstacle.addImage(obstacle1)
     obstacle.scale = 0.1;
